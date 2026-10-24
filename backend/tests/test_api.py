@@ -1,0 +1,5 @@
+from fastapi.testclient import TestClient
+from src.main import app
+def test_health():
+ with TestClient(app) as c:
+  r=c.get("/health"); assert r.status_code==200 and r.json()["status"]=="ok"

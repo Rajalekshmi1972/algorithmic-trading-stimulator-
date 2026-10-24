@@ -1,0 +1,18 @@
+services:
+  backend:
+    build: ./backend
+    ports: ["8000:8000"]
+    environment:
+      DATABASE_URL: sqlite:///./algotradex.db
+      CORS_ORIGINS: http://localhost:5173
+      DEMO_MODE: "false"
+    volumes: ["./backend:/app"]
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports: ["5173:5173"]
+    volumes: ["./frontend:/app", "/app/node_modules"]
+    environment:
+      VITE_API_URL: http://localhost:8000
+    depends_on: [backend]
