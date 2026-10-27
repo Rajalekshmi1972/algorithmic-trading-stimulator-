@@ -37,8 +37,30 @@ export default function Register() {
       const codeParam = res.debug_code ? `&code=${res.debug_code}` : "";
       navigate(`/verify-otp?email=${encodeURIComponent(email)}&purpose=registration${codeParam}`);
     } catch (err: any) {
-      const detail = err?.response?.data?.detail;
-      toast.error(typeof detail === "string" ? detail : "Registration failed. Please check inputs.", "Registration Error");
+      const responseData = err?.response?.data;
+      const detail = responseData?.detail;
+      let message = "Registration failed. Please check the required fields and try again.";
+
+      if (typeof detail === "string") {
+        message = detail;
+      } else if (Array.isArray(detail)) {
+        // FastAPI/Pydantic validation errors arrive as an array of details.
+        message = detail
+          .map((item: any) => {
+            const field = Array.isArray(item?.loc) ? item.loc[item.loc.length - 1] : null;
+            const reason = item?.msg || "Invalid value";
+            return field ? `${String(field)}: ${reason}` : reason;
+          })
+          .join(". ");
+      } else if (detail && typeof detail === "object" && typeof detail.message === "string") {
+        message = detail.message;
+      } else if (responseData?.message && typeof responseData.message === "string") {
+        message = responseData.message;
+      } else if (err?.request && !err?.response) {
+        message = "Cannot reach the backend. Make sure the FastAPI server is running at http://localhost:8000.";
+      }
+
+      toast.error(message, "Registration Error");
     } finally {
       setLoading(false);
     }
